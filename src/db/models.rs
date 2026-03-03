@@ -31,7 +31,9 @@ pub struct SessionInfo {
     #[tabled(rename = "Path")]
     pub path: String,
     #[tabled(rename = "Schema")]
-    pub template: String,
+    pub template_name: String,
+    #[tabled(skip)]
+    pub template_path: String,
 }
 
 impl Template {
@@ -63,7 +65,8 @@ impl SessionInfo {
             is_autoloaded: row.get("is_autoloaded")?,
             name: row.get("name")?,
             path: row.get("path")?,
-            template: row.get("template_name")?,
+            template_name: row.get("template_name")?,
+            template_path: row.get("template_path")?,
         })
     }
 }

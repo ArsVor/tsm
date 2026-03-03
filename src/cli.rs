@@ -60,6 +60,22 @@ pub struct Cli {
     )]
     pub info: bool,
 
+    /// start session with schema from file
+    #[arg(
+        short = 'f',
+        value_name = "FILE",
+        conflicts_with_all = ["check", "sync", "remove", "query"]
+    )]
+    pub schema_file: Option<String>,
+
+    /// start session with schema
+    #[arg(
+        short = 'o',
+        value_name = "SCHEMA",
+        conflicts_with_all = ["check", "sync", "remove", "query"]
+    )]
+    pub schema_owerride: Option<String>,
+
     /// alias for '-s project'
     #[arg(
         short = 'p',
