@@ -1,16 +1,6 @@
 use rusqlite::{Result, Row};
 use tabled::Tabled;
 
-#[derive(Debug, Clone, Tabled)]
-pub struct Template {
-    #[tabled(rename = "ID")]
-    pub id: i32,
-    #[tabled(rename = "Name")]
-    pub name: String,
-    #[tabled(rename = "Path")]
-    pub path: String,
-}
-
 #[derive(Debug, Clone)]
 pub struct Session {
     pub id: i32,
@@ -22,10 +12,10 @@ pub struct Session {
 
 #[derive(Debug, Clone, Tabled)]
 pub struct SessionInfo {
-    #[tabled(rename = "ID")]
+    #[tabled(skip)]
     pub id: i32,
     #[tabled(rename = "Autoload")]
-    pub is_autoloaded: String,
+    pub is_autoloaded: bool,
     #[tabled(rename = "Name")]
     pub name: String,
     #[tabled(rename = "Path")]
@@ -36,14 +26,23 @@ pub struct SessionInfo {
     pub template_path: String,
 }
 
-impl Template {
-    pub fn from_row(row: &Row) -> Result<Self> {
-        Ok(Self {
-            id: row.get("id")?,
-            name: row.get("name")?,
-            path: row.get("path")?,
-        })
-    }
+#[derive(Debug, Clone)]
+pub struct Template {
+    pub id: i32,
+    pub name: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Tabled)]
+pub struct TemplateInfo {
+    #[tabled(skip)]
+    pub id: i32,
+    #[tabled(rename = "Name")]
+    pub name: String,
+    #[tabled(rename = "Path")]
+    pub path: String,
+    #[tabled(rename = "Session count")]
+    pub session_count: i32,
 }
 
 impl Session {
@@ -67,6 +66,27 @@ impl SessionInfo {
             path: row.get("path")?,
             template_name: row.get("template_name")?,
             template_path: row.get("template_path")?,
+        })
+    }
+}
+
+impl Template {
+    pub fn from_row(row: &Row) -> Result<Self> {
+        Ok(Self {
+            id: row.get("id")?,
+            name: row.get("name")?,
+            path: row.get("path")?,
+        })
+    }
+}
+
+impl TemplateInfo {
+    pub fn from_row(row: &Row) -> Result<Self> {
+        Ok(Self {
+            id: row.get("id")?,
+            name: row.get("name")?,
+            path: row.get("path")?,
+            session_count: row.get("session_count")?,
         })
     }
 }

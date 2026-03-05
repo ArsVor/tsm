@@ -115,7 +115,7 @@ pub mod get {
 
     use rusqlite::OptionalExtension;
 
-    use crate::{db::models::SessionInfo, err_exit};
+    use crate::{db::models::{SessionInfo, TemplateInfo}, err_exit};
 
     use super::*;
 
@@ -155,6 +155,8 @@ pub mod get {
             sql.push_str(&queries.get_where());
         }
 
+        sql.push_str("ORDER BY s.name");
+
         let sessions: Vec<SessionInfo> = conn
             .prepare(&sql)?
             .query_map(
@@ -178,6 +180,34 @@ pub mod get {
             .query_map(
                 params_from_iter(queries.get_dyn_params()),
                 Template::from_row,
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(templates)
+    }
+
+    pub fn template_info(conn: &Connection, queries: &Queries) -> Result<Vec<TemplateInfo>> {
+        let mut sql = "
+            SELECT
+                t.id as id,
+                t.name as name,
+                t.path as path,
+                COUNT(DISTINCT s.id) as session_count
+            FROM template
+            LEFT JOIN session s ON s.template_id = t.id 
+        ".to_string();
+
+        if !queries.is_empty() {
+            sql.push_str(&queries.get_where());
+        }
+
+        sql.push_str("GROUP BY t.id ORDER BY t.name");
+
+        let templates: Vec<TemplateInfo> = conn
+            .prepare(&sql)?
+            .query_map(
+                params_from_iter(queries.get_dyn_params()),
+                TemplateInfo::from_row,
             )?
             .collect::<Result<Vec<_>, _>>()?;
 
