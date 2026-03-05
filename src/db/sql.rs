@@ -77,7 +77,7 @@ impl Default for Queries {
     }
 }
 
-pub mod add {
+pub mod create {
 
     use super::*;
 
@@ -107,7 +107,9 @@ pub mod add {
 
 pub mod get {
 
-    use crate::db::models::SessionInfo;
+    use rusqlite::OptionalExtension;
+
+    use crate::{db::models::SessionInfo, err_exit};
 
     use super::*;
 
@@ -174,6 +176,18 @@ pub mod get {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(templates)
+    }
+
+    pub fn template_id_or_err(conn: &Connection, name: &str) -> Result<i32> {
+        conn.query_row(
+            "SELECT id FROM template WHERE name = ?",
+            params![name],
+            |row| row.get(0),
+        )
+        .optional()?
+        .ok_or_else(|| {
+            err_exit!(format!("schema: '{}', does not exist", &name.yellow()));
+        })
     }
 }
 

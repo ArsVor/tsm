@@ -1,4 +1,8 @@
+use std::path::Path;
+
 use clap::{ArgGroup, Parser};
+
+use crate::err_exit;
 
 /// Tmux Session Manager simple program for manage the TMUX sessions
 /// (automatically or manually load with presets)
@@ -14,7 +18,7 @@ use clap::{ArgGroup, Parser};
     group(
         ArgGroup::new("switch")
         .required(false)
-        .args(["enable", "disable"])
+        .args(["autoload", "disable_autoload"])
     ),
     group(
         ArgGroup::new("schemas")
@@ -43,20 +47,34 @@ pub struct Cli {
     #[arg(short = 'U')]
     pub upload: bool,
 
+    /// alter target (do actoion with template) 
+    #[arg(
+        short = 'a',
+        conflicts_with_all = ["upload"]
+    )]
+    pub template: bool,
+
+    /// path
+    #[arg(
+        short = 'c',
+        conflicts_with_all = ["check", "remove", "upload"]
+    )]
+    pub path: Option<String>,
+
     /// disable autoload
     #[arg(
         short = 'd',
         requires = "sync",
         conflicts_with_all = ["remove", "upload"]
     )]
-    pub disable: bool,
+    pub disable_autoload: bool,
 
     /// view info
     #[arg(
         short = 'i',
         requires = "query",
         requires = "name",
-        conflicts_with_all = ["check", "sync", "remove", "upload"]
+        conflicts_with_all = ["check", "remove", "sync", "upload"]
     )]
     pub info: bool,
 
@@ -64,17 +82,16 @@ pub struct Cli {
     #[arg(
         short = 'f',
         value_name = "FILE",
-        conflicts_with_all = ["check", "sync", "remove", "query"]
+        conflicts_with_all = ["check", "query", "remove", "sync"]
     )]
     pub schema_file: Option<String>,
 
-    /// start session with schema
+    /// no attach
     #[arg(
-        short = 'o',
-        value_name = "SCHEMA",
-        conflicts_with_all = ["check", "sync", "remove", "query"]
+        short = 'n',
+        conflicts_with_all = ["check", "query", "remove", "sync"]
     )]
-    pub schema_owerride: Option<String>,
+    pub no_attach: bool,
 
     /// alias for '-s project'
     #[arg(
@@ -86,21 +103,24 @@ pub struct Cli {
     /// schema (default = simple)
     #[arg(
         short = 's',
-        conflicts_with_all = ["check", "remove", "upload"]
+        conflicts_with_all = ["check", "query", "remove", "template"]
     )]
     pub schema: Option<String>,
 
-    /// do actoion with template 
-    #[arg(short = 't')]
-    pub template: bool,
+    /// tabled output
+    #[arg(
+        short = 't',
+        conflicts_with_all = ["check", "remove", "sync", "upload"]
+    )]
+    pub tabled: bool,
 
-    /// enable autoload
+    /// autoload
     #[arg(
         short = 'u',
         requires = "sync",
         conflicts_with_all = ["query", "remove"]
     )]
-    pub enable: bool,
+    pub autoload: bool,
 
     /// update
     #[arg(
@@ -119,17 +139,10 @@ pub struct Cli {
     )]
     pub rename: Option<String>,
 
-    /// path
-    #[arg(
-        short = 'c',
-        conflicts_with_all = ["check", "remove", "upload"]
-    )]
-    pub path: Option<String>,
-
     /// name
     #[arg(
         required_unless_present_any(["check", "query"]),
-        required_unless_present_all = ["enable", "upload"]
+        required_unless_present_all = ["autoload", "upload"]
     )]
     pub name: Option<String>,
 }
@@ -143,5 +156,28 @@ impl Cli {
         } else {
             "simple"
          }
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone().unwrap()
+    }
+
+    pub fn get_path(&self) -> String {
+        let raw_path = if let Some(cli_path) = &self.path {
+            cli_path.clone()
+        } else {
+            ".".into()
+        };
+
+        let path = Path::new(&raw_path);
+
+        if !path.exists() {
+            err_exit!(format!("Path: '{}' does not exist", raw_path.yellow()));
+        }
+
+        path.canonicalize()
+            .unwrap_or_else(|e| {err_exit!(format!("Cannot canonicalize path: '{}'", e.yellow()));})
+            .to_string_lossy()
+            .into_owned()
     }
 }
