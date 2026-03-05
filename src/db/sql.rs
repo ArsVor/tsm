@@ -105,6 +105,12 @@ pub mod create {
     }
 }
 
+pub fn is_instance(conn: &Connection, table: &str, name: &str) -> Result<bool> {
+    let sql: String = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE name = ?)");
+
+    conn.query_row(&sql, params![name], |row| row.get(0))
+}
+
 pub mod get {
 
     use rusqlite::OptionalExtension;

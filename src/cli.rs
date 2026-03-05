@@ -52,7 +52,7 @@ pub struct Cli {
         short = 'a',
         conflicts_with_all = ["upload"]
     )]
-    pub template: bool,
+    pub alter_target: bool,
 
     /// path
     #[arg(

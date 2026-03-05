@@ -11,7 +11,7 @@ use crate::{
 pub fn route(conn: &Connection, cli: Cli) -> Result<()> {
     if cli.update {
         update(conn, cli)?;
-    } else if cli.template {
+    } else if cli.alter_target {
         create_template(conn, cli)?;
     } else {
         create_session(conn, cli)?;
@@ -58,9 +58,9 @@ fn update(conn: &Connection, cli: Cli) -> Result<()> {
         queries.push(Query::new("path", cli.get_path()));
     }
 
-    let table = if cli.template { "template" } else { "session" };
+    let table = if cli.alter_target { "template" } else { "session" };
 
-    if !cli.template {
+    if !cli.alter_target{
         if cli.autoload || cli.disable_autoload {
             queries.push(Query::new("is_autoloaded", cli.autoload));
         };
