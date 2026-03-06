@@ -31,17 +31,17 @@ pub struct Cli {
     #[arg(short = 'C')]
     pub check: bool,
 
-    /// Synchronize
-    #[arg(short = 'S')]
-    pub sync: bool,
+    /// Query
+    #[arg(short = 'Q')]
+    pub query: bool,
 
     /// Remove
     #[arg(short = 'R')]
     pub remove: bool,
 
-    /// Query
-    #[arg(short = 'Q')]
-    pub query: bool,
+    /// Synchronize
+    #[arg(short = 'S')]
+    pub sync: bool,
 
     /// Upload session
     #[arg(short = 'U')]
@@ -156,6 +156,22 @@ impl Cli {
         } else {
             "simple"
          }
+    }
+
+    pub fn get_command(&self) -> &str {
+        if self.check {
+            "check"
+        } else if self.query {
+            "query"
+        } else if self.remove {
+            "remove"
+        } else if self.sync {
+            "sync"
+        } else if self.upload {
+            "upload"
+        } else {
+            unreachable!()
+        }
     }
 
     pub fn get_name(&self) -> String {

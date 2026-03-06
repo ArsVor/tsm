@@ -1,9 +1,21 @@
 use rusqlite::{Connection, Result};
 
-pub fn init_shema(conn: &Connection) -> Result<()> {
+pub fn init_schema(conn: &Connection) -> Result<()> {
     create_session_table(conn)?;
     create_template_table(conn)?;
     Ok(())
+}
+
+pub fn open_connection_with_fk(path: &str) -> Result<Connection, rusqlite::Error> {
+    let db_exist: bool = std::path::Path::new(path).exists();
+
+    let conn = Connection::open(path)?;
+    conn.execute("PRAGMA foreign_keys = ON;", [])?;
+
+    if !db_exist {
+        init_schema(&conn)?;
+    }
+    Ok(conn)
 }
 
 fn create_session_table(conn: &Connection) -> Result<()> {
