@@ -2,18 +2,26 @@ pub mod cli;
 pub mod db;
 pub mod handlers;
 pub mod makros;
+pub mod init;
 
 use crate::cli::Cli;
 use clap::Parser;
 use db::schema::open_connection_with_fk;
-use rusqlite::Connection;
+use init::init_paths;
 
 fn main() {
     let cli = Cli::parse();
-    let conn: Connection = open_connection_with_fk("./tsm.db").unwrap();
-    // println!("SCHEMA: {}", &args.effective_schema());
-    // println!("Args: {:?}", &args);
-    // println!("Path: {}", &args.get_path());
+    // let conn = open_connection_with_fk("/home/ars/projects/tsm/tsm.db").unwrap();
+
+    let paths = init_paths();
+
+    let config_file = paths.config_dir.join("config.toml");
+
+    if !config_file.exists() {
+        std::fs::write(&config_file, "database = \"tsm.db\"").unwrap();
+    }
+
+    let conn = open_connection_with_fk(paths.db.to_str().unwrap()).unwrap();
 
     let result = match cli.get_command() {
         "check" => handlers::check::route(&conn, cli),
@@ -21,7 +29,7 @@ fn main() {
         "remove" => handlers::remove::route(&conn, cli),
         "sync" => handlers::sync::route(&conn, cli),
         "upload" => handlers::upload::route(&conn, cli),
-        _ => Ok(())
+        _ => Ok(()),
     };
 
     if let Err(e) = result {

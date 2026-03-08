@@ -1,3 +1,4 @@
+use chrono::Local;
 use rusqlite::{Connection, Result};
 
 use crate::{
@@ -20,10 +21,12 @@ pub fn route(conn: &Connection, cli: Cli) -> Result<()> {
 }
 
 fn create_session(conn: &Connection, cli: Cli) -> Result<()> {
-    let templ_id: i32 = sql::get::template_id_or_err(conn, &cli.schema.clone().unwrap())?;
+    let templ_id: i32 = sql::get::template_id_or_err(conn, cli.effective_schema())?;
 
     let session: Session = Session {
         id: 0,
+        added: Local::now().date_naive().to_string(),
+        edited: Local::now().date_naive().to_string(),
         is_autoloaded: cli.autoload,
         name: cli.get_name(),
         path: cli.get_path(),
@@ -38,6 +41,8 @@ fn create_session(conn: &Connection, cli: Cli) -> Result<()> {
 fn create_template(conn: &Connection, cli: Cli) -> Result<()> {
     let template: Template = Template {
         id: 0,
+        added: Local::now().date_naive().to_string(),
+        edited: Local::now().date_naive().to_string(),
         name: cli.get_name(),
         path: cli.get_path(),
     };
@@ -58,9 +63,13 @@ fn update(conn: &Connection, cli: Cli) -> Result<()> {
         queries.push(Query::new("path", cli.get_path()));
     }
 
-    let table = if cli.alter_target { "template" } else { "session" };
+    let table = if cli.alter_target {
+        "template"
+    } else {
+        "session"
+    };
 
-    if !cli.alter_target{
+    if !cli.alter_target {
         if cli.autoload || cli.disable_autoload {
             queries.push(Query::new("is_autoloaded", cli.autoload));
         };
@@ -76,8 +85,11 @@ fn update(conn: &Connection, cli: Cli) -> Result<()> {
         }
     };
 
-    sql::update(conn, &queries, table, &cli.get_name())?;
+    if !queries.is_empty() {
+        queries.push(Query::new("edited", Local::now().date_naive().to_string()));
+    }
 
+    sql::update(conn, &queries, table, &cli.get_name())?;
 
     Ok(())
 }

@@ -1,4 +1,6 @@
-use crate::db::models::{Session, Template};
+use std::fmt;
+
+use crate:: db::models::{Session, Template};
 use rusqlite::{Connection, Result, ToSql, params, params_from_iter, types::Value};
 
 #[derive(Debug, Clone)]
@@ -77,6 +79,24 @@ impl Default for Queries {
     }
 }
 
+impl fmt::Display for Query {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}={:?}", self.name, self.value)
+    }
+}
+
+impl fmt::Display for Queries {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = self.qvec
+            .iter()
+            .map(|q| q.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        write!(f, "{}", &s)
+    }
+}
+
 pub mod create {
 
     use super::*;
@@ -84,8 +104,10 @@ pub mod create {
     pub fn session(conn: &Connection, session: Session) -> Result<()> {
         conn.execute(
             "INSERT INTO session
-            (is_autoloaded, name, path, template_id) VALUES (?1, ?2, ?3, ?4)",
+            (added, edited, is_autoloaded, name, path, template_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
+                session.added,
+                session.edited, 
                 session.is_autoloaded,
                 session.name,
                 session.path,
@@ -98,8 +120,8 @@ pub mod create {
     pub fn template(conn: &Connection, template: Template) -> Result<()> {
         conn.execute(
             "INSERT INTO template
-            (name, path) VALUES (?1, ?2)",
-            params![template.name, template.path,],
+            (added, edited, name, path) VALUES (?1, ?2, ?3, ?4)",
+            params![template.added, template.edited, template.name, template.path,],
         )?;
         Ok(())
     }
@@ -115,7 +137,10 @@ pub mod get {
 
     use rusqlite::OptionalExtension;
 
-    use crate::{db::models::{SessionInfo, TemplateInfo}, err_exit};
+    use crate::{
+        db::models::{SessionInfo, TemplateInfo},
+        err_exit,
+    };
 
     use super::*;
 
@@ -125,7 +150,8 @@ pub mod get {
         if !queries.is_empty() {
             sql.push_str(&queries.get_where());
         }
-
+        // println!("SQL: {}", &sql);
+        // err_exit!(format!("\n{}:?", queries));
         let sessions: Vec<Session> = conn
             .prepare(&sql)?
             .query_map(
@@ -141,11 +167,13 @@ pub mod get {
         let mut sql = "
             SELECT 
                 s.id as id,
+                s.added as added,
+                s.edited as edited,
                 s.is_autoloaded as is_autoloaded,
                 s.name as name,
                 s.path as path,
                 t.name as template_name,
-                t.parh as template_path
+                t.path as template_path
             FROM session s
             JOIN template t ON t.id = s.template_id
         "
@@ -155,8 +183,10 @@ pub mod get {
             sql.push_str(&queries.get_where());
         }
 
-        sql.push_str("ORDER BY s.name");
+        sql.push_str(" ORDER BY s.name");
 
+        // println!("SQL: {}", &sql);
+        // err_exit!(format!("\n{}:?", queries));
         let sessions: Vec<SessionInfo> = conn
             .prepare(&sql)?
             .query_map(
@@ -175,6 +205,8 @@ pub mod get {
             sql.push_str(&queries.get_where());
         }
 
+        // println!("SQL: {}", &sql);
+        // err_exit!(format!("\n{}:?", queries));
         let templates: Vec<Template> = conn
             .prepare(&sql)?
             .query_map(
@@ -190,19 +222,24 @@ pub mod get {
         let mut sql = "
             SELECT
                 t.id as id,
+                t.added as added,
+                t.edited as edited,
                 t.name as name,
                 t.path as path,
                 COUNT(DISTINCT s.id) as session_count
-            FROM template
+            FROM template t
             LEFT JOIN session s ON s.template_id = t.id 
-        ".to_string();
+        "
+        .to_string();
 
         if !queries.is_empty() {
             sql.push_str(&queries.get_where());
         }
 
-        sql.push_str("GROUP BY t.id ORDER BY t.name");
+        sql.push_str(" GROUP BY t.id ORDER BY t.name");
 
+        // println!("SQL: {}", &sql);
+        // err_exit!(format!("\n{}:?", queries));
         let templates: Vec<TemplateInfo> = conn
             .prepare(&sql)?
             .query_map(
@@ -243,6 +280,8 @@ pub fn update(conn: &Connection, queries: &Queries, table: &str, name: &str) -> 
         &queries.get_update_set()
     );
 
+    // println!("SQL: {}", &sql);
+    // err_exit!(format!("\n{}:?", queries));
     conn.execute(&sql, params_from_iter(dyn_params))?;
 
     Ok(())

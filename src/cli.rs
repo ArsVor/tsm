@@ -103,7 +103,7 @@ pub struct Cli {
     /// schema (default = simple)
     #[arg(
         short = 's',
-        conflicts_with_all = ["check", "query", "remove", "template"]
+        conflicts_with_all = ["check", "query", "remove", "alter_target"]
     )]
     pub schema: Option<String>,
 
@@ -117,8 +117,7 @@ pub struct Cli {
     /// autoload
     #[arg(
         short = 'u',
-        requires = "sync",
-        conflicts_with_all = ["query", "remove"]
+        conflicts_with_all = ["remove"]
     )]
     pub autoload: bool,
 
@@ -188,11 +187,11 @@ impl Cli {
         let path = Path::new(&raw_path);
 
         if !path.exists() {
-            err_exit!(format!("Path: '{}' does not exist", raw_path.yellow()));
+            err_exit!(format!("path: '{}' does not exist", raw_path.yellow()));
         }
 
         path.canonicalize()
-            .unwrap_or_else(|e| {err_exit!(format!("Cannot canonicalize path: '{}'", e.yellow()));})
+            .unwrap_or_else(|e| {err_exit!(format!("cannot canonicalize path: '{}'", e.yellow()));})
             .to_string_lossy()
             .into_owned()
     }

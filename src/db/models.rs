@@ -4,6 +4,8 @@ use tabled::Tabled;
 #[derive(Debug, Clone)]
 pub struct Session {
     pub id: i32,
+    pub added: String,
+    pub edited: String,
     pub is_autoloaded: bool,
     pub name: String,
     pub path: String,
@@ -14,6 +16,10 @@ pub struct Session {
 pub struct SessionInfo {
     #[tabled(skip)]
     pub id: i32,
+    #[tabled(skip)]
+    pub added: String,
+    #[tabled(skip)]
+    pub edited: String,
     #[tabled(rename = "Autoload")]
     pub is_autoloaded: bool,
     #[tabled(rename = "Name")]
@@ -29,6 +35,8 @@ pub struct SessionInfo {
 #[derive(Debug, Clone)]
 pub struct Template {
     pub id: i32,
+    pub added: String,
+    pub edited: String,
     pub name: String,
     pub path: String,
 }
@@ -37,6 +45,10 @@ pub struct Template {
 pub struct TemplateInfo {
     #[tabled(skip)]
     pub id: i32,
+    #[tabled(skip)]
+    pub added: String,
+    #[tabled(skip)]
+    pub edited: String,
     #[tabled(rename = "Name")]
     pub name: String,
     #[tabled(rename = "Path")]
@@ -49,6 +61,8 @@ impl Session {
     pub fn from_row(row: &Row) -> Result<Self> {
         Ok(Self {
             id: row.get("id")?,
+            added: row.get("added")?,
+            edited: row.get("edited")?,
             is_autoloaded: row.get("is_autoloaded")?,
             name: row.get("name")?,
             path: row.get("path")?,
@@ -61,6 +75,8 @@ impl SessionInfo {
     pub fn from_row(row: &Row) -> Result<Self> {
         Ok(Self {
             id: row.get("id")?,
+            added: row.get("added")?,
+            edited: row.get("edited")?,
             is_autoloaded: row.get("is_autoloaded")?,
             name: row.get("name")?,
             path: row.get("path")?,
@@ -74,6 +90,8 @@ impl Template {
     pub fn from_row(row: &Row) -> Result<Self> {
         Ok(Self {
             id: row.get("id")?,
+            added: row.get("added")?,
+            edited: row.get("edited")?,
             name: row.get("name")?,
             path: row.get("path")?,
         })
@@ -84,6 +102,8 @@ impl TemplateInfo {
     pub fn from_row(row: &Row) -> Result<Self> {
         Ok(Self {
             id: row.get("id")?,
+            added: row.get("added")?,
+            edited: row.get("edited")?,
             name: row.get("name")?,
             path: row.get("path")?,
             session_count: row.get("session_count")?,

@@ -1,9 +1,13 @@
+use owo_colors::OwoColorize;
 use rusqlite::{Connection, Result};
-use tabled::{settings::Style, Table};
+use tabled::{Table, settings::Style};
 
 use crate::{
     cli::Cli,
-    db::{models::{SessionInfo, TemplateInfo}, sql::{self, Queries, Query}},
+    db::{
+        models::{SessionInfo, TemplateInfo},
+        sql::{self, Queries, Query},
+    },
 };
 
 pub fn route(conn: &Connection, cli: Cli) -> Result<()> {
@@ -20,7 +24,10 @@ pub fn route(conn: &Connection, cli: Cli) -> Result<()> {
 fn query_one(conn: &Connection, cli: Cli) -> Result<()> {
     let mut queries: Queries = Queries::new();
 
-    queries.push(Query::new("name", cli.get_name()));
+    queries.push(Query::new(
+        if cli.alter_target { "t.name" } else { "s.name" },
+        cli.get_name(),
+    ));
 
     if cli.alter_target {
         let query_set: Vec<TemplateInfo> = sql::get::template_info(conn, &queries)?;
@@ -28,9 +35,11 @@ fn query_one(conn: &Connection, cli: Cli) -> Result<()> {
         if !query_set.is_empty() {
             let template: &TemplateInfo = &query_set[0];
 
-            println!("Name              : {}", &template.name);
-            println!("Path              : {}", &template.path);
-            println!("Attached sessions : {}", &template.session_count);
+            println!("{:<17} : {}", "Name", &template.name);
+            println!("{:<17} : {}", "Added", &template.added);
+            println!("{:<17} : {}", "Edited", &template.edited);
+            println!("{:<17} : '{}'", "Path", &template.path.yellow());
+            println!("{:<17} : {}", "Attached sessions", &template.session_count);
         }
     } else {
         let query_set: Vec<SessionInfo> = sql::get::session_info(conn, &queries)?;
@@ -38,10 +47,16 @@ fn query_one(conn: &Connection, cli: Cli) -> Result<()> {
         if !query_set.is_empty() {
             let session: &SessionInfo = &query_set[0];
 
-            println!("Name          : {}", &session.name);
-            println!("Autoloaded    : {}", if session.is_autoloaded {"yes"} else {"no"});
-            println!("Path          : {}", &session.path);
-            println!("Schema        : {}", &session.template_name);
+            println!("{:<11} : {}", "Name", &session.name);
+            println!("{:<11} : {}", "Added", &session.added);
+            println!("{:<11} : {}", "Edited", &session.edited);
+            println!(
+                "{:<11} : {}",
+                "Autoloaded",
+                if session.is_autoloaded { "yes" } else { "no" }
+            );
+            println!("{:<11} : '{}'", "Path", &session.path.yellow());
+            println!("{:<11} : {}", "Schema", &session.template_name);
         }
     }
 
@@ -50,7 +65,7 @@ fn query_one(conn: &Connection, cli: Cli) -> Result<()> {
 
 fn query_session(conn: &Connection, cli: Cli) -> Result<()> {
     let mut queries: Queries = Queries::new();
-    
+
     if let Some(path) = cli.path {
         queries.push(Query::new("s.path", path));
     }
@@ -85,7 +100,7 @@ fn query_session(conn: &Connection, cli: Cli) -> Result<()> {
 
 fn query_template(conn: &Connection, cli: Cli) -> Result<()> {
     let mut queries: Queries = Queries::new();
-    
+
     if let Some(path) = cli.path {
         queries.push(Query::new("t.path", path));
     }
@@ -95,7 +110,7 @@ fn query_template(conn: &Connection, cli: Cli) -> Result<()> {
     }
 
     let query_set: Vec<TemplateInfo> = sql::get::template_info(conn, &queries)?;
-    
+
     if cli.tabled {
         let mut table: Table = Table::new(query_set);
         table.with(Style::rounded());
