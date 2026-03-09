@@ -3,7 +3,14 @@ use std::path::Path;
 
 use rusqlite::{Connection, Result};
 
-use crate::{cli::Cli, db::{models::{SessionInfo, TemplateInfo}, sql::{self, Queries, Query}}, warn_exit};
+use crate::{
+    cli::Cli,
+    db::{
+        models::{SessionInfo, TemplateInfo},
+        sql::{self, Queries, Query},
+    },
+    warn_exit,
+};
 
 pub fn route(conn: &Connection, cli: Cli) -> Result<()> {
     if cli.alter_target {
@@ -25,7 +32,10 @@ fn check_session(conn: &Connection, cli: Cli) -> Result<()> {
     let sessions: Vec<SessionInfo> = sql::get::session_info(conn, &queries)?;
 
     if sessions.is_empty() {
-        warn_exit!(format!("session '{}' does not exist", cli.get_name().yellow()));
+        warn_exit!(format!(
+            "session '{}' does not exist",
+            cli.get_name().yellow()
+        ));
     }
 
     for session in sessions {
@@ -59,7 +69,10 @@ fn check_template(conn: &Connection, cli: Cli) -> Result<()> {
     let templates: Vec<TemplateInfo> = sql::get::template_info(conn, &queries)?;
 
     if templates.is_empty() {
-        warn_exit!(format!("schema '{}' does not exist", cli.get_name().yellow()));
+        warn_exit!(format!(
+            "schema '{}' does not exist",
+            cli.get_name().yellow()
+        ));
     }
 
     for template in templates {
@@ -68,7 +81,7 @@ fn check_template(conn: &Connection, cli: Cli) -> Result<()> {
             false => {
                 println!("{:<8}: '{}'", "Schema", &template.name.blue());
                 fail("path", &template.path)
-            },
+            }
         }
     }
 
@@ -76,9 +89,9 @@ fn check_template(conn: &Connection, cli: Cli) -> Result<()> {
 }
 
 fn fail(title: &str, item: &str) {
-    println!("{:>8}: {} '{}'", &title, "✗ fail".red(), item.yellow());
+    println!("{:>8}: {} '{}'", &title, "✗ Fail".red(), item.yellow());
 }
 
 fn ok(title: &str, item: &str) {
-    println!("{:<8}: '{}' {}", &title, item.blue(), "✓ ok".green());
+    println!("{:<8}: {:.<25} {}", &title, item, "✓ Ok".green());
 }
